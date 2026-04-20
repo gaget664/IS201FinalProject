@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎡 Subject Spinner</title>
+<link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e17;
+    --surface: #1a1830;
+    --card: #221f3b;
+    --accent: #ff6b6b;
+    --accent2: #ffd93d;
+    --accent3: #6bcb77;
+    --accent4: #4d96ff;
+    --text: #fffffe;
+    --muted: #a7a9be;
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(77,150,255,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(255,107,107,0.08) 0%, transparent 60%);
+  }
+
+  header {
+    text-align: center;
+    padding: 2rem 1rem 0.5rem;
+    position: relative;
+  }
+
+  header h1 {
+    font-family: 'Boogaloo', cursive;
+    font-size: clamp(2.2rem, 6vw, 3.8rem);
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #ffd93d, #ff6b6b, #4d96ff, #6bcb77);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 20px rgba(255,107,107,0.3));
+  }
+
+  header p {
+    color: var(--muted);
+    font-size: 1rem;
+    margin-top: 0.3rem;
+  }
+
+  .stars {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .star {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle var(--dur) ease-in-out infinite alternate;
+    opacity: 0;
+  }
+
+  @keyframes twinkle {
+    from { opacity: 0; transform: scale(0.6); }
+    to { opacity: 0.7; transform: scale(1.2); }
+  }
+
+  .layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    max-width: 1100px;
+    margin: 2rem auto;
+    padding: 0 1.5rem 3rem;
+    position: relative;
+    z-index: 1;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  /* ── LEFT PANEL ── */
+  .panel {
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    flex: 1 1 280px;
+    max-width: 340px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .panel h2 {
+    font-family: 'Boogaloo', cursive;
+    font-size: 1.4rem;
+    color: var(--accent2);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .add-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .add-row input {
+    flex: 1;
+    background: var(--surface);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.95rem;
+    padding: 0.6rem 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .add-row input:focus { border-color: var(--accent4); }
+
+  .btn {
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'Boogaloo', cursive;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    padding: 0.6rem 1rem;
+    transition: transform 0.15s, box-shadow 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn:active { transform: scale(0.95); }
+
+  .btn-add {
+    background: linear-gradient(135deg, var(--accent4), #8a4fff);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(77,150,255,0.4);
+  }
+
+  .btn-add:hover { box-shadow: 0 6px 20px rgba(77,150,255,0.6); transform: translateY(-1px); }
+
+  .btn-clear {
+    background: rgba(255,107,107,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(255,107,107,0.3);
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+    align-self: flex-start;
+  }
+
+  .btn-clear:hover { background: rgba(255,107,107,0.25); }
+
+  .subject-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .subject-list::-webkit-scrollbar { width: 4px; }
+  .subject-list::-webkit-scrollbar-track { background: transparent; }
+  .subject-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+
+  .subject-tag {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.9rem;
+    border-left: 4px solid var(--color);
+    animation: slideIn 0.25s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .subject-tag span { flex: 1; word-break: break-word; }
+
+  .subject-tag button {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.3);
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 0 0 0 0.5rem;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+
+  .subject-tag button:hover { color: var(--accent); }
+
+  .empty-hint {
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 1rem 0;
+    font-style: italic;
+  }
+
+  /* ── WHEEL SECTION ── */
+  .wheel-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    flex: 2 1 380px;
+  }
+
+  .wheel-wrapper {
+    position: relative;
+    width: min(420px, 90vw);
+    height: min(420px, 90vw);
+  }
+
+  /* Glow ring */
+  .wheel-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    background: conic-gradient(#ff6b6b, #ffd93d, #6bcb77, #4d96ff, #8a4fff, #ff6b6b);
+    opacity: 0.2;
+    animation: rotateSlow 8s linear infinite;
+    filter: blur(10px);
+  }
+
+  @keyframes rotateSlow { to { transform: rotate(360deg); } }
+
+  /* Pointer/Arrow */
+  .pointer {
+    position: absolute;
+    top: 50%;
+    right: -22px;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-top: 20px solid transparent;
+    border-bottom: 20px solid transparent;
+    border-right: 36px solid #fff;
+    filter: drop-shadow(0 0 8px rgba(255,255,255,0.6));
+    z-index: 10;
+    transition: filter 0.3s;
+  }
+
+  .pointer.glow { filter: drop-shadow(0 0 16px #ffd93d) drop-shadow(0 0 32px #ffd93d); }
+
+  canvas#wheelCanvas {
+    border-radius: 50%;
+    display: block;
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 24px rgba(0,0,0,0.7));
+  }
+
+  /* Center hub */
+  .hub {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 52px; height: 52px;
+    background: radial-gradient(circle at 40% 35%, #fff 0%, #c0c0c0 60%, #888 100%);
+    border-radius: 50%;
+    box-shadow: 0 0 0 5px #0f0e17, 0 0 0 8px rgba(255,255,255,0.15), 0 4px 20px rgba(0,0,0,0.5);
+    z-index: 10;
+  }
+
+  .btn-spin {
+    font-family: 'Boogaloo', cursive;
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+    padding: 0.85rem 3rem;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #ff6b6b, #ffd93d);
+    color: #0f0e17;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(255,107,107,0.45);
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-spin::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.3), transparent);
+  }
+
+  .btn-spin:hover:not(:disabled) { transform: translateY(-3px) scale(1.03); box-shadow: 0 10px 30px rgba(255,107,107,0.6); }
+  .btn-spin:active:not(:disabled) { transform: scale(0.97); }
+  .btn-spin:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* ── RESULT ── */
+  #result {
+    text-align: center;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+
+  #result .label {
+    color: var(--muted);
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  #result .subject-name {
+    font-family: 'Boogaloo', cursive;
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    color: var(--accent2);
+    text-shadow: 0 0 30px rgba(255,217,61,0.6);
+    animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.5); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  /* ── CONFETTI ── */
+  .confetti-piece {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    top: -10px;
+    pointer-events: none;
+    z-index: 9999;
+    border-radius: 2px;
+    animation: confettiFall var(--dur) ease-in forwards;
+  }
+
+  @keyframes confettiFall {
+    0% { transform: translateY(0) rotate(0deg) translateX(0); opacity: 1; }
+    80% { opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg) translateX(var(--drift)); opacity: 0; }
+  }
+
+  /* ── FLASH OVERLAY ── */
+  #flash {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 500;
+    background: white;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .layout { gap: 1.5rem; padding: 0 1rem 2rem; }
+    .panel { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div id="flash"></div>
+
+<header>
+  <h1>🎡 Subject Spinner</h1>
+  <p>Add your subjects, spin the wheel, find out what to study!</p>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT PANEL -->
+  <div class="panel">
+    <h2>📚 Subjects</h2>
+    <div class="add-row">
+      <input type="text" id="subjectInput" placeholder="e.g. Math, History…" maxlength="30">
+      <button class="btn btn-add" onclick="addSubject()">+ Add</button>
+    </div>
+    <div class="subject-list" id="subjectList">
+      <div class="empty-hint" id="emptyHint">Add at least 2 subjects to spin!</div>
+    </div>
+    <button class="btn btn-clear" onclick="clearAll()">🗑 Clear All</button>
+  </div>
+
+  <!-- WHEEL -->
+  <div class="wheel-section">
+    <div class="wheel-wrapper">
+      <div class="pointer" id="pointer"></div>
+      <canvas id="wheelCanvas" width="420" height="420"></canvas>
+      <div class="hub"></div>
+    </div>
+    <button class="btn-spin" id="spinBtn" onclick="spinWheel()" disabled>🎰 SPIN!</button>
+    <div id="result">
+      <div class="label">waiting for spin…</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── PALETTE ──────────────────────────────────────────────────────────────────
+const PALETTE = [
+  '#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#c77dff',
+  '#ff9f1c','#2ec4b6','#e71d36','#b5e48c','#f72585',
+  '#7209b7','#4cc9f0','#f4a261','#a8dadc','#e63946'
+];
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let subjects = [];
+let spinning = false;
+let currentAngle = 0;
+let animFrame;
+
+// ── AUDIO ────────────────────────────────────────────────────────────────────
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let ctx;
+function getCtx() { if (!ctx) ctx = new AudioCtx(); return ctx; }
+
+function playTick() {
+  try {
+    const c = getCtx();
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.connect(g); g.connect(c.destination);
+    o.type = 'triangle';
+    o.frequency.value = 600 + Math.random() * 400;
+    g.gain.setValueAtTime(0.18, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.08);
+    o.start(); o.stop(c.currentTime + 0.08);
+  } catch(e){}
+}
+
+function playWin() {
+  try {
+    const c = getCtx();
+    const notes = [523, 659, 784, 1047];
+    notes.forEach((freq, i) => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.connect(g); g.connect(c.destination);
+      o.type = 'sine';
+      o.frequency.value = freq;
+      const t = c.currentTime + i * 0.12;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.25, t + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      o.start(t); o.stop(t + 0.35);
+    });
+  } catch(e){}
+}
+
+// ── STARS ────────────────────────────────────────────────────────────────────
+(function createStars() {
+  const container = document.getElementById('stars');
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    s.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}%;
+      top:${Math.random()*100}%;
+      --dur:${(Math.random()*3+2).toFixed(1)}s;
+      animation-delay:${(Math.random()*4).toFixed(1)}s;
+    `;
+    container.appendChild(s);
+  }
+})();
+
+// ── SUBJECTS ─────────────────────────────────────────────────────────────────
+function addSubject() {
+  const input = document.getElementById('subjectInput');
+  const val = input.value.trim();
+  if (!val) return;
+  if (subjects.find(s => s.name.toLowerCase() === val.toLowerCase())) {
+    shakeInput(input); return;
+  }
+  subjects.push({ name: val, color: PALETTE[subjects.length % PALETTE.length] });
+  input.value = '';
+  renderList();
+  drawWheel();
+  updateSpinBtn();
+  input.focus();
+}
+
+function removeSubject(i) {
+  subjects.splice(i, 1);
+  renderList();
+  drawWheel();
+  updateSpinBtn();
+}
+
+function clearAll() {
+  subjects = [];
+  renderList();
+  drawWheel();
+  updateSpinBtn();
+  document.getElementById('result').innerHTML = '<div class="label">waiting for spin…</div>';
+}
+
+function shakeInput(el) {
+  el.style.animation = 'none';
+  el.style.borderColor = '#ff6b6b';
+  setTimeout(() => el.style.borderColor = '', 600);
+}
+
+function renderList() {
+  const list = document.getElementById('subjectList');
+  const hint = document.getElementById('emptyHint');
+  if (subjects.length === 0) {
+    list.innerHTML = '';
+    list.appendChild(hint);
+    return;
+  }
+  list.innerHTML = subjects.map((s, i) => `
+    <div class="subject-tag" style="--color:${s.color}">
+      <span>${s.name}</span>
+      <button onclick="removeSubject(${i})" title="Remove">✕</button>
+    </div>
+  `).join('');
+}
+
+function updateSpinBtn() {
+  document.getElementById('spinBtn').disabled = subjects.length < 2 || spinning;
+}
+
+// ── WHEEL DRAW ────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('wheelCanvas');
+const kctx = canvas.getContext('2d');
+const CX = canvas.width / 2, CY = canvas.height / 2, R = CX - 8;
+
+function drawWheel(angleOffset = 0) {
+  kctx.clearRect(0, 0, canvas.width, canvas.height);
+  const n = subjects.length;
+
+  if (n === 0) {
+    // Empty state
+    kctx.save();
+    kctx.beginPath();
+    kctx.arc(CX, CY, R, 0, Math.PI * 2);
+    kctx.fillStyle = '#1a1830';
+    kctx.fill();
+    kctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    kctx.lineWidth = 4;
+    kctx.stroke();
+    kctx.fillStyle = 'rgba(255,255,255,0.15)';
+    kctx.font = '500 1rem Nunito, sans-serif';
+    kctx.textAlign = 'center';
+    kctx.fillText('Add subjects to see the wheel!', CX, CY);
+    kctx.restore();
+    return;
+  }
+
+  const slice = (Math.PI * 2) / n;
+
+  subjects.forEach((s, i) => {
+    const start = angleOffset + i * slice - Math.PI / 2;
+    const end = start + slice;
+    const mid = start + slice / 2;
+
+    // Slice fill
+    kctx.beginPath();
+    kctx.moveTo(CX, CY);
+    kctx.arc(CX, CY, R, start, end);
+    kctx.closePath();
+    kctx.fillStyle = s.color;
+    kctx.fill();
+
+    // Subtle inner highlight
+    kctx.save();
+    kctx.clip();
+    const grad = kctx.createRadialGradient(CX, CY, 0, CX, CY, R);
+    grad.addColorStop(0, 'rgba(255,255,255,0.18)');
+    grad.addColorStop(0.6, 'rgba(255,255,255,0)');
+    kctx.fillStyle = grad;
+    kctx.fill();
+    kctx.restore();
+
+    // Divider lines
+    kctx.beginPath();
+    kctx.moveTo(CX, CY);
+    kctx.lineTo(CX + R * Math.cos(start), CY + R * Math.sin(start));
+    kctx.strokeStyle = 'rgba(0,0,0,0.4)';
+    kctx.lineWidth = 2;
+    kctx.stroke();
+
+    // Label
+    kctx.save();
+    kctx.translate(CX, CY);
+    kctx.rotate(mid);
+    kctx.textAlign = 'right';
+    kctx.fillStyle = '#fff';
+    kctx.shadowColor = 'rgba(0,0,0,0.7)';
+    kctx.shadowBlur = 4;
+
+    const textR = R * 0.68;
+    const maxWidth = R * 0.55;
+    const label = s.name.length > 14 ? s.name.slice(0, 13) + '…' : s.name;
+    const fontSize = n > 10 ? 11 : n > 6 ? 13 : 15;
+    kctx.font = `900 ${fontSize}px Nunito, sans-serif`;
+    kctx.fillText(label, textR, fontSize / 3, maxWidth);
+    kctx.restore();
+  });
+
+  // Outer ring
+  kctx.beginPath();
+  kctx.arc(CX, CY, R, 0, Math.PI * 2);
+  kctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  kctx.lineWidth = 5;
+  kctx.stroke();
+}
+
+drawWheel();
+
+// ── SPIN ──────────────────────────────────────────────────────────────────────
+function spinWheel() {
+  if (spinning || subjects.length < 2) return;
+  spinning = true;
+  updateSpinBtn();
+  document.getElementById('result').innerHTML = '<div class="label">spinning…</div>';
+  document.getElementById('pointer').classList.remove('glow');
+
+  const n = subjects.length;
+  const totalRotations = (8 + Math.random() * 8) * Math.PI * 2;
+  const targetAngle = currentAngle + totalRotations;
+  const duration = 4000 + Math.random() * 2000;
+  const start = performance.now();
+  const startAngle = currentAngle;
+
+  let lastTickAngle = startAngle;
+  const slice = (Math.PI * 2) / n;
+
+  function easeOut(t) {
+    return 1 - Math.pow(1 - t, 4);
+  }
+
+  function frame(now) {
+    const elapsed = now - start;
+    const t = Math.min(elapsed / duration, 1);
+    const easedT = easeOut(t);
+    currentAngle = startAngle + (targetAngle - startAngle) * easedT;
+
+    drawWheel(currentAngle);
+
+    // Tick sound when crossing a segment boundary
+    const normalised = ((currentAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    const lastNorm = ((lastTickAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    for (let i = 0; i < n; i++) {
+      const boundary = i * slice;
+      if (crosses(lastNorm, normalised, boundary)) playTick();
+    }
+    lastTickAngle = currentAngle;
+
+    if (t < 1) {
+      animFrame = requestAnimationFrame(frame);
+    } else {
+      // Done
+      currentAngle = targetAngle;
+      drawWheel(currentAngle);
+      spinning = false;
+      updateSpinBtn();
+      showResult();
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
+
+function crosses(from, to, boundary) {
+  // Handle wrap-around
+  if (to >= from) return from < boundary && boundary <= to;
+  return from < boundary || boundary <= to;
+}
+
+function showResult() {
+  const n = subjects.length;
+  const slice = (Math.PI * 2) / n;
+
+  // The pointer points to the RIGHT (angle = 0 in canvas = right = 3 o'clock),
+  // but we rotate starting from -PI/2 (top). Figure out which slice the pointer
+  // (at canvas angle 0 = right) lands in.
+  const pointerAngle = Math.PI / 2; // offset because we start slices at -PI/2
+  const norm = ((-currentAngle + pointerAngle) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+  const index = Math.floor(norm / slice) % n;
+  const winner = subjects[index];
+
+  // Flash
+  const flash = document.getElementById('flash');
+  flash.style.opacity = '0.35';
+  setTimeout(() => flash.style.opacity = '0', 150);
+
+  // Pointer glow
+  document.getElementById('pointer').classList.add('glow');
+
+  // Result display
+  document.getElementById('result').innerHTML = `
+    <div class="label">🎉 You got…</div>
+    <div class="subject-name" style="color:${winner.color}">${winner.name}</div>
+  `;
+
+  playWin();
+  launchConfetti(winner.color);
+}
+
+// ── CONFETTI ──────────────────────────────────────────────────────────────────
+function launchConfetti(primaryColor) {
+  const colors = [primaryColor, '#ffd93d', '#fff', '#ff6b6b', '#6bcb77', '#4d96ff'];
+  for (let i = 0; i < 90; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const size = Math.random() * 10 + 5;
+    const drift = (Math.random() - 0.5) * 300;
+    el.style.cssText = `
+      left: ${Math.random() * 100}%;
+      background: ${color};
+      width: ${size}px; height: ${size}px;
+      border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+      --dur: ${(Math.random() * 1.5 + 1.5).toFixed(2)}s;
+      --drift: ${drift}px;
+      animation-delay: ${(Math.random() * 0.5).toFixed(2)}s;
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+}
+
+// ── KEYBOARD ──────────────────────────────────────────────────────────────────
+document.getElementById('subjectInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addSubject();
+});
+
+// ── DEFAULT SUBJECTS ──────────────────────────────────────────────────────────
+['Math', 'History', 'Science', 'English', 'Art'].forEach(name => {
+  subjects.push({ name, color: PALETTE[subjects.length % PALETTE.length] });
+});
+renderList();
+drawWheel();
+updateSpinBtn();
+</script>
+</body>
+</html>
